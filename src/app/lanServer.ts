@@ -59,10 +59,12 @@ export function lanAddresses(): LanAddress[] {
   for (const [name, entries] of Object.entries(networkInterfaces())) {
     for (const entry of entries ?? []) {
       if (entry.family !== 'IPv4' || entry.internal) continue;
-      out.push({ address: entry.address, label: name });
+      // Tailscale's own adapter (matched by NAME: a Wi-Fi adapter on a CGNAT network can hold 100.64/10 too): private to the owner's devices, works away from home.
+      const tailnet = /tailscale/i.test(name) && /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(entry.address);
+      out.push({ address: entry.address, label: tailnet ? 'Tailscale (anywhere, only your own devices)' : name });
     }
   }
-  return out;
+  return out.sort((a, b) => Number(b.label.startsWith('Tailscale')) - Number(a.label.startsWith('Tailscale')));
 }
 
 export interface LanStatus {
