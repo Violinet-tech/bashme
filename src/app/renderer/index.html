@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      Strict CSP, and the reason the styles and script are separate files rather
+      than inline: this window renders text a model proposed. `default-src
+      'none'` plus no 'unsafe-inline' means a command containing markup cannot
+      become markup here. The renderer also only ever assigns via textContent.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; media-src 'self';"
+    />
+    <title>bashme</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <!--
+      The background plate. The video carries the motion and the .webp is its
+      poster, so a blocked autoplay or a slow first paint shows the original
+      artwork rather than black. aria-hidden because it says nothing.
+    -->
+    <video class="plate" id="plate" autoplay loop muted playsinline
+           preload="auto" poster="assets/bg.webp" aria-hidden="true">
+      <source src="assets/loop.mp4" type="video/mp4">
+    </video>
+    <div class="scrim" aria-hidden="true"></div>
+
+    <header>
+      <h1>bashme</h1>
+      <nav id="tabs">
+        <button data-tab="requests" class="on">Requests</button>
+        <button data-tab="rules">Rules</button>
+        <button data-tab="clients">Clients</button>
+        <button data-tab="devices">Devices</button>
+        <button data-tab="settings">Settings</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="tab-requests" class="tab"></section>
+      <section id="tab-rules" class="tab hidden"></section>
+      <section id="tab-clients" class="tab hidden"></section>
+      <section id="tab-devices" class="tab hidden"></section>
+      <section id="tab-settings" class="tab hidden"></section>
+    </main>
+
+    <div id="modal" class="hidden"></div>
+
+    <script type="module" src="renderer.js"></script>
+  </body>
+</html>

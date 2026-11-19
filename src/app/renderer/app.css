@@ -1,0 +1,275 @@
+:root {
+  /*
+    Taken from assets/bg.webp, measured rather than eyeballed: the artwork's
+    dominant hues are amber (15deg, 6163 px), steel-cyan (195deg, 7916 px) and
+    violet (270-285deg, 1404 px), over a ground whose median luminance is 26.
+    The accent is amber because amber is what the picture is actually lit by.
+
+    Back to dark, 2026-09-27. The four earlier "no opacity" reports were never
+    fully a contrast problem: `#modal { display: flex }` outranked
+    `.hidden { display: none }` (see the #modal rule below), so the approval
+    overlay stayed painted over the whole app on every one of those runs -- a
+    70%-black wash greying every panel, which is exactly what "no opacity"
+    looks like whether or not the palette under it was sound. That bug is
+    fixed now (#modal.hidden matches its specificity), so this is a real
+    second attempt, not a repeat of the first four.
+
+    The actual contrast math still has to hold regardless: --panel at 0.90
+    alpha stays close to its own colour composited over EITHER extreme of the
+    artwork (see scripts/check-contrast.mjs's worst-case check), so ink reads
+    against the panel itself rather than against whatever the picture is
+    doing underneath it. Verified: panel over a pure-white source pixel still
+    lands near #2c2541, and over pure black near #1c1632 -- both close enough
+    to --panel that every text token clears its floor at both extremes.
+  */
+  --bg: #0d0a1a;
+  --panel: #1f1836;
+  --panel-alpha: 0.90;
+  --line: rgba(232, 224, 250, 0.16);
+  --ink: #f1ecfa;
+  --ink-dim: #cabfe6;
+  --ink-faint: #ada1cf;
+  --accent: #ffb066;
+  --steel: #7ad9f2;
+  --purple: #c9a3f5;
+  --danger: #ff7a7a;
+  --warn: #ffcf70;
+  color-scheme: dark;
+}
+
+/*
+  The background plate, and the one scrim over it.
+
+  Numbers, because opacities MULTIPLY and this has been got wrong before:
+  a panel at 0.90 over a scrim of 0.28 leaves 0.10 x 0.72 = 7% of the artwork
+  showing through a panel, and 72% (top) to 38% (bottom) in the open areas
+  between panels. Text never sits on bare artwork except the header title,
+  which is what the radial pool is for.
+
+  The light palette needed brightness(1.75) to lift the plate enough for its
+  dark text to read against it. Dark mode has that backwards -- --ink is
+  light now, so it wants the plate DARKER, not brighter, and the filter is
+  dropped rather than inverted.
+
+  Worst-case contrast is computed against BOTH of the artwork's extremes
+  (pure white and pure black) under a panel, not against the panel colour --
+  scripts/check-contrast.mjs does that arithmetic and fails below 5.5:1.
+*/
+.plate {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.12);
+  background: url('assets/bg.webp') center/cover no-repeat;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 28% at 12% 5%, rgba(13, 10, 26, 0.55), transparent 72%),
+    linear-gradient(180deg, rgba(13, 10, 26, 0.28) 0%, rgba(13, 10, 26, 0.40) 48%, rgba(13, 10, 26, 0.62) 100%);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--ink);
+  font: 14px/1.55 "Segoe UI", system-ui, sans-serif;
+}
+
+header {
+  /* No backdrop-filter: it renders as NOTHING under software compositing,
+     which leaves the header transparent over the plate and unreadable. */
+  background: rgba(31, 24, 54, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+h1 {
+  /* The one run of text on bare artwork, so it carries its own shadow. */
+  text-shadow: 0 1px 16px rgba(23, 18, 51, 0.85);
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+nav { display: flex; gap: 6px; }
+
+button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+button:hover { background: rgba(232, 224, 250, 0.08); }
+button:disabled { opacity: 0.4; cursor: default; }
+/* Text on the active chip has to be dark now that --accent is a light
+   amber -- white-on-light-amber was the light palette's pairing, inverted.
+   Literal hex matching the page background above, not var(--bg):
+   check-contrast.mjs's onAccent check reads a literal colour here. Careful
+   with this comment itself -- its palette-drift regex matches any custom
+   property name immediately followed by a colon, wherever that text sits,
+   comment included. */
+button.on { background: var(--accent); border-color: var(--accent); color: #0d0a1a; }
+button.danger { border-color: rgba(156, 28, 28, 0.45); color: var(--danger); }
+button.link {
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+main { padding: 20px; }
+
+.panel {
+  /* Alpha, not the flat token: the plate has to survive behind it. */
+  background: rgba(31, 24, 54, 0.90);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-bottom: 14px;
+  padding: 16px;
+}
+
+.label {
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.blurb { color: var(--ink-faint); font-size: 12px; margin: 6px 0 0; }
+.dim { color: var(--ink-dim); }
+.faint { color: var(--ink-faint); font-size: 12px; }
+
+code, pre, .mono { font-family: Consolas, "Cascadia Mono", monospace; }
+
+pre {
+  /* Dark again: --ink is light again, so the code well wants to read as
+     recessed and near-black, not as a faint tint on a light panel. */
+  background: rgba(0, 0, 0, 0.30);
+  border-radius: 4px;
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 13px;
+}
+
+.row {
+  align-items: flex-start;
+  border-top: 1px solid rgba(232, 224, 250, 0.12);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.row:first-of-type { border-top: 0; }
+.row .grow { min-width: 0; flex: 1; }
+
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+input, textarea, select {
+  /* A field must differ in value from its own text, whichever way the
+     palette runs: --ink is light now, so the field goes darker, not lighter. */
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  width: 100%;
+}
+textarea { font-family: Consolas, monospace; min-height: 76px; resize: vertical; }
+label { display: block; margin-bottom: 12px; }
+label > span { display: block; font-size: 12px; margin-bottom: 4px; }
+
+.warnbox {
+  background: rgba(255, 200, 87, 0.1);
+  border: 1px solid rgba(255, 200, 87, 0.4);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.warnbox .label { color: var(--warn); }
+
+.errbox {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+/* Left over from the dark palette this file used to carry: a 30%-black fill
+   reads as a recessed well on a dark panel and as a grey smear on a light one.
+   The inset here is a tint of the page colour, so it stays a step down from the
+   panel whichever way the palette runs. */
+.okbox {
+  background: rgba(26, 16, 48, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+/* The pairing QR. White is painted into the canvas rather than left to the
+   panel, because the panel is translucent over a moving plate and a code with
+   the artwork showing through does not scan; the padding just keeps the white
+   square from touching the box edge. */
+/* 264px is sized for the LARGER of the two codes. A relay pairing URL carries
+   the session, the key and the code, which lands around 49 modules a side; at
+   232px that is 4.7 device pixels per module, and a phone camera wants more
+   margin than that. The LAN code is smaller and simply renders crisper. */
+.qr {
+  display: block;
+  width: 264px;
+  height: 264px;
+  image-rendering: pixelated;
+  margin: 10px 0;
+  border-radius: 3px;
+}
+
+.hidden { display: none; }
+
+#modal {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 100;
+}
+/* An ID selector outranks a class one, so `.hidden { display: none }` lost to
+   `#modal { display: flex }` and the overlay stayed painted over the whole app
+   forever: a 70%-black wash that greyed every panel AND, being fixed at
+   inset 0, swallowed every click. It read as two unrelated bugs. Match the
+   specificity rather than reaching for !important. */
+#modal.hidden { display: none; }
+#modal .panel { margin: 0; max-width: 620px; width: 100%; }
+
+.actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+ul { margin: 6px 0 0; padding-left: 18px; }
+li { font-size: 12px; }

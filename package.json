@@ -1,0 +1,58 @@
+{
+  "name": "bashme",
+  "version": "0.1.0",
+  "description": "Approval gate for agent-initiated side effects. Standing rules, audit log, paired-device approval.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "src/core/index.ts",
+  "exports": {
+    ".": "./src/core/index.ts",
+    "./core": "./src/core/index.ts"
+  },
+  "bin": { "bashme": "./bin/bashme.mjs" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"src/core/*.test.ts\" \"src/app/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "check:better-sqlite3": "node scripts/check-better-sqlite3.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "app": "electron src/app/main.ts",
+    "dist": "electron-builder"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^44.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.0"
+  },
+  "build": {
+    "appId": "ai.violetdiffusion.bashme",
+    "productName": "bashme",
+    "extraMetadata": { "main": "src/app/main.ts" },
+    "files": [
+      "src/**/*",
+      "!src/**/*.test.ts",
+      "bin/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "copyright": "© 2026 VIOLINET Tech",
+    "directories": { "output": "dist" },
+    "npmRebuild": false,
+    "win": {
+      "executableName": "bashme",
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "bashme-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "bashme",
+      "uninstallDisplayName": "bashme",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
